@@ -14,7 +14,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	UPROPERTY(EditDefaultsOnly, Category = "Mesh")
+	UPROPERTY(VisibleAnywhere, Category = "Mesh")
 	UStaticMeshComponent* BlockMesh;
 
 public:	

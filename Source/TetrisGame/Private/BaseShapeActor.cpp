@@ -4,6 +4,7 @@ ABaseShapeActor::ABaseShapeActor()
 {
 	PrimaryActorTick.bCanEverTick = false;
 	SceneRootComponent = CreateDefaultSubobject<USceneComponent>("SceneRootComponent");
+	SetRootComponent(SceneRootComponent);
 }
 
 void ABaseShapeActor::BeginPlay()

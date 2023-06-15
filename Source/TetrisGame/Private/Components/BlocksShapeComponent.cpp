@@ -14,13 +14,16 @@ void UBlocksShapeComponent::BeginPlay()
 }
 void UBlocksShapeComponent::CreateAndAttachShapeActor(TArray<ABaseBlock*> BlocksToAttach)
 {
+    if (ShapeActor) return;
     ShapeActor = GetWorld()->SpawnActor<ABaseShapeActor>(ABaseShapeActor::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator);
     FAttachmentTransformRules AttachmentRules(EAttachmentRule::KeepRelative, false);
-    for (const auto Actor : BlocksToAttach)
+    for (const auto block : BlocksToAttach)
     {
-        if (Actor)
+        if (block)
         {
-            Actor->AttachToComponent(ShapeActor->GetRootComponent(), AttachmentRules);
+            const auto CurrentLocation = block->GetActorLocation();
+            block->AttachToActor(ShapeActor, AttachmentRules);
+            block->SetActorLocation(CurrentLocation);
         }
     }
     ShapeActor->AttachToComponent(GetOwner()->GetRootComponent(), AttachmentRules);
@@ -29,9 +32,25 @@ void UBlocksShapeComponent::CreateAndAttachShapeActor(TArray<ABaseBlock*> Blocks
     ShapeActor->SetOwner(GetOwner());
 }
 
+void UBlocksShapeComponent::ClearShapeActor()
+{
+    if (!ShapeActor) return;
+
+    for (const auto block : ShapeActor->AttachedBlocks)
+    {
+        if (block) 
+        {
+            block->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+        }
+    }
+    ShapeActor->AttachedBlocks = {};
+    ShapeActor->Destroy();
+    ShapeActor = nullptr;
+}
+
 void UBlocksShapeComponent::MoveDown()
 {
-    GetOwner()->SetActorLocation(GetOwner()->GetActorLocation() - FVector::UpVector * BlockMovementDistance);
+    TryToMove(-FVector::UpVector * BlockMovementDistance);
 }
 
 void UBlocksShapeComponent::MoveLeft()
@@ -65,21 +84,40 @@ void UBlocksShapeComponent::TryToMove(const FVector& MoveTo)
     for (const auto block : AttachedBlocks)
     {
         const auto LocationToCheck = block->GetActorLocation() + MoveTo;
-        if (!IsCanMoveToLocation(LocationToCheck)) 
-        {
-            //UE_LOG(LogTemp, Error, TEXT("%s, %s, false"), *block->GetName(), *LocationToCheck.ToString());
-            return;
-        }
-        else 
-        {
-            //UE_LOG(LogTemp, Error, TEXT("%s, %s, true"), *block->GetName(), *LocationToCheck.ToString());
-        }
+        if (!IsCanMoveToLocation(LocationToCheck)) return;
 
     }
     GetOwner()->SetActorLocation(GetOwner()->GetActorLocation() + MoveTo);
-
+    CheckFloorReaching();
 }
 
+void UBlocksShapeComponent::CheckFloorReaching()
+{
+    TArray<AActor*> AllBlocks;
+
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABaseBlock::StaticClass(), AllBlocks);
+
+    const auto AttachedBlocks = ShapeActor->AttachedBlocks;
+
+    for (const auto i : AttachedBlocks)
+    {
+        for (const auto j : AllBlocks) 
+        { 
+            if (ShapeActor->AttachedBlocks.Contains(j)) continue;
+
+            const auto iLocation = i->GetActorLocation();
+            const auto jLocation = j->GetActorLocation();
+
+            bool a = FMath::IsNearlyEqual(BlockMovementDistance, iLocation.Z - jLocation.Z);
+            bool b = (iLocation.X == jLocation.X) && (iLocation.Y == jLocation.Y);
+            if (a && b)
+            {
+                OnReachedFloor.Broadcast();
+                return;
+            }
+        }
+    }
+}
 void UBlocksShapeComponent::TryToRotate(const FRotator& NewRotation)
 {
     ShapeActor->AddActorLocalRotation(NewRotation);
@@ -103,9 +141,11 @@ bool UBlocksShapeComponent::IsCanMoveToLocation(const FVector& NewLocation)
     for (const auto block : AllBlocks) 
     {
         if (ShapeActor->AttachedBlocks.Contains(block)) continue;
+
         if (NewLocation.Equals(block->GetActorLocation(), 0.2f)) return false;
     }
 
     return (NewLocation.X > -BoundingMatrixLength) && (NewLocation.X < BoundingMatrixLength) && 
            (NewLocation.Y > -BoundingMatrixLength) && (NewLocation.Y < BoundingMatrixLength);
+
 }

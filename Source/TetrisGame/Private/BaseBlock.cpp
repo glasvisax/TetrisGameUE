@@ -5,6 +5,7 @@ ABaseBlock::ABaseBlock()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	BlockMesh = CreateDefaultSubobject<UStaticMeshComponent>("BlockMesh");
+	SetRootComponent(BlockMesh);
 }
 
 void ABaseBlock::BeginPlay()

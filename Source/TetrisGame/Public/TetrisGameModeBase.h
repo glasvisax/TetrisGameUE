@@ -7,6 +7,7 @@
 #include "TetrisGameModeBase.generated.h"
 
 class ABaseBlock;
+class ABaseTetrisPawn;
 
 UCLASS()
 class TETRISGAME_API ATetrisGameModeBase : public AGameModeBase
@@ -44,11 +45,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Tetris Settings", meta = (ClampMin = "5", ClampMax = "15"))
 	int32 TerisRoof = 7;
 
+    UFUNCTION(BlueprintCallable)
+    void ResetTetrisPawn();
+
 private:
 
     TArray<TArray<FVector>> TetrisShapes =
     {
-        /*
+        
         // I-Shape
         { FVector{0.0f, 0.0f, 0.0f}, FVector{BlockEdgeLength, 0.0f, 0.0f},
           FVector{2 * BlockEdgeLength, 0.0f, 0.0f}, FVector{3 * BlockEdgeLength, 0.0f, 0.0f} },
@@ -72,11 +76,18 @@ private:
           FVector{0.0f, -BlockEdgeLength, 0.0f}, FVector{ BlockEdgeLength, -BlockEdgeLength, 0.0f} },
         // 3-x Line
         { FVector{0.0f, 0.0f, 0.0f}, FVector{-BlockEdgeLength, 0.0f, 0.0f}, FVector{BlockEdgeLength, 0.0f, 0.0f} },
-        */
         // 2-x Line
         { FVector{0.0f, 0.0f, 0.0f}, FVector{-BlockEdgeLength, 0.0f, 0.0f} },
         // Point
-        //{ FVector{0.0f, 0.0f, 0.0f} }
+        { FVector{0.0f, 0.0f, 0.0f} }
     };
 
+
+    ABaseTetrisPawn* GetTetrisPawn();
+
+    float FloorPositionZ;
+    float RoofPositionZ;
+
+    UFUNCTION()
+    void OnPawnReachedFloor();
 };

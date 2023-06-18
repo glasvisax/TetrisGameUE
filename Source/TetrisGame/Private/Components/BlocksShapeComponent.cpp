@@ -43,7 +43,7 @@ void UBlocksShapeComponent::ClearShapeActor()
             block->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
         }
     }
-    ShapeActor->AttachedBlocks = {};
+    ShapeActor->AttachedBlocks.Empty();
     ShapeActor->Destroy();
     ShapeActor = nullptr;
 }
@@ -84,33 +84,38 @@ void UBlocksShapeComponent::TryToMove(const FVector& MoveTo)
     for (const auto block : AttachedBlocks)
     {
         const auto LocationToCheck = block->GetActorLocation() + MoveTo;
-        if (!IsCanMoveToLocation(LocationToCheck)) return;
-
+        if (!IsCanMoveToLocation(LocationToCheck)) { CheckReaching(); return; }
     }
     GetOwner()->SetActorLocation(GetOwner()->GetActorLocation() + MoveTo);
-    CheckFloorReaching();
 }
 
-void UBlocksShapeComponent::CheckFloorReaching()
+void UBlocksShapeComponent::CheckReaching()
 {
     TArray<AActor*> AllBlocks;
 
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABaseBlock::StaticClass(), AllBlocks);
 
-    const auto AttachedBlocks = ShapeActor->AttachedBlocks;
-
-    for (const auto i : AttachedBlocks)
+    for (const auto attached : ShapeActor->AttachedBlocks)
     {
-        for (const auto j : AllBlocks) 
+        for (const auto non_attached : AllBlocks)
         { 
-            if (ShapeActor->AttachedBlocks.Contains(j)) continue;
+            if (ShapeActor->AttachedBlocks.Contains(non_attached)) continue;
 
-            const auto iLocation = i->GetActorLocation();
-            const auto jLocation = j->GetActorLocation();
+            const auto AttachedLocation = attached->GetActorLocation();
+            const auto NonAttachedLocation = non_attached->GetActorLocation();
 
-            bool a = FMath::IsNearlyEqual(BlockMovementDistance, iLocation.Z - jLocation.Z);
-            bool b = (iLocation.X == jLocation.X) && (iLocation.Y == jLocation.Y);
-            if (a && b)
+            bool IsFloorReaching = FMath::IsNearlyEqual(BlockMovementDistance, AttachedLocation.Z - NonAttachedLocation.Z) && 
+                FMath::IsNearlyEqual(NonAttachedLocation.X, AttachedLocation.X) && 
+                FMath::IsNearlyEqual(NonAttachedLocation.Y, AttachedLocation.Y);
+
+            bool IsRoofReaching = FMath::IsNearlyEqual(BlockMovementDistance, RoofPositionZ - AttachedLocation.Z);
+            if (IsRoofReaching && IsFloorReaching)
+            {
+                OnReachedRoof.Broadcast();
+                return;
+            }
+
+            if (IsFloorReaching)
             {
                 OnReachedFloor.Broadcast();
                 return;
@@ -144,7 +149,6 @@ bool UBlocksShapeComponent::IsCanMoveToLocation(const FVector& NewLocation)
 
         if (NewLocation.Equals(block->GetActorLocation(), 0.2f)) return false;
     }
-
     return (NewLocation.X > -BoundingMatrixLength) && (NewLocation.X < BoundingMatrixLength) && 
            (NewLocation.Y > -BoundingMatrixLength) && (NewLocation.Y < BoundingMatrixLength);
 

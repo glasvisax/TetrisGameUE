@@ -43,7 +43,7 @@ void ABaseTetrisPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 
 void ABaseTetrisPawn::MoveForward()
 {
-    if (!GetWorld()) return;
+    if (!GetWorld() || !bActionInputEnabled) return;
     const auto Angle = GetCameraRotationAngle();   
     if (Angle < 25.0f && Angle > -25.0f) BlockShapeComponent->MoveBackward();
     else if (Angle > 25.0f && Angle < 60.0f) BlockShapeComponent->MoveLeft();
@@ -53,7 +53,7 @@ void ABaseTetrisPawn::MoveForward()
 
 void ABaseTetrisPawn::MoveBackward()
 {
-    if (!GetWorld()) return;
+    if (!GetWorld() || !bActionInputEnabled) return;
     const auto Angle = GetCameraRotationAngle();
     if (Angle < 25.0f && Angle > -25.0f) BlockShapeComponent->MoveForward();
     else if (Angle > 25.0f && Angle < 60.0f) BlockShapeComponent->MoveRight();
@@ -63,7 +63,7 @@ void ABaseTetrisPawn::MoveBackward()
 
 void ABaseTetrisPawn::MoveRight()
 {
-    if (!GetWorld()) return;
+    if (!GetWorld() || !bActionInputEnabled) return;
     const auto Angle = GetCameraRotationAngle();
     if (Angle < 25.0f && Angle > -25.0f) BlockShapeComponent->MoveLeft();
     else if (Angle > 25.0f && Angle < 60.0f) BlockShapeComponent->MoveForward();
@@ -73,12 +73,17 @@ void ABaseTetrisPawn::MoveRight()
 
 void ABaseTetrisPawn::MoveLeft()
 {  
-    if (!GetWorld()) return;
+    if (!GetWorld() || !bActionInputEnabled) return;
     const auto Angle = GetCameraRotationAngle();
     if (Angle < 25.0f && Angle > -25.0f) BlockShapeComponent->MoveRight();
     else if (Angle > 25.0f && Angle < 60.0f) BlockShapeComponent->MoveBackward();
     else if ((Angle > 60.0f && Angle < 90.0f) || (Angle < -60.0f && Angle > -90.0f)) BlockShapeComponent->MoveLeft();
     else if (Angle > -60.0f && Angle < -25.0f) BlockShapeComponent->MoveForward(); 
+}
+
+void ABaseTetrisPawn::MoveDown() 
+{
+    BlockShapeComponent->MoveDown();
 }
 
 

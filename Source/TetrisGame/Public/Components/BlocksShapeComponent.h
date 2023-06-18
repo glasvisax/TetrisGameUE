@@ -6,7 +6,7 @@
 #include "BlocksShapeComponent.generated.h"
 
 class ABaseShapeActor;
-DECLARE_MULTICAST_DELEGATE(FOnReachedFloorSignature);
+DECLARE_MULTICAST_DELEGATE(FOnReachedSignature);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class TETRISGAME_API UBlocksShapeComponent : public UActorComponent
@@ -22,7 +22,8 @@ protected:
 	virtual void BeginPlay() override;
 
 public:	
-	FOnReachedFloorSignature OnReachedFloor;
+	FOnReachedSignature OnReachedFloor;
+	FOnReachedSignature OnReachedRoof;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement")
 	float BlockMovementDistance = 200.0f;
@@ -51,5 +52,6 @@ private:
 	bool IsCanMoveToLocation(const FVector& NewLocation);
 	void TryToMove(const FVector& MoveTo);
 	void TryToRotate(const FRotator& NewRotation);
-	void CheckFloorReaching();
+	void CheckReaching();
+	FTimerHandle SmoothMoveHandle;
 };

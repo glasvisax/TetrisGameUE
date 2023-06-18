@@ -38,8 +38,13 @@ public:
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	void DisableActionInput() { bActionInputEnabled = false; }
+	void EnableActionInput() { bActionInputEnabled = true; }
+	void MoveDown();
+
 private:
-	
+	bool bActionInputEnabled = false;
+
 	void MoveForward();
 	void MoveBackward();
 	void MoveRight();

@@ -27,9 +27,9 @@ protected:
     virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override
     {
         Super::PostEditChangeProperty(PropertyChangedEvent);
-        if (TetrixMatrixOrder % 2 == 0)
+        if (TetrisMatrixOrder % 2 == 0)
         {
-            TetrixMatrixOrder--;
+            TetrisMatrixOrder--;
         }
     }
 
@@ -39,16 +39,38 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Tetris Settings")
 	TSubclassOf<ABaseBlock> BlockClass;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Tetris Settings", meta = (ClampMin = "7", ClampMax = "21"))
-	int32 TetrixMatrixOrder = 7;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Tetris Settings", meta = (ClampMin = "3", ClampMax = "21"))
+	int32 TetrisMatrixOrder = 3;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Tetris Settings", meta = (ClampMin = "5", ClampMax = "15"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Tetris Settings", meta = (ClampMin = "7", ClampMax = "15"))
 	int32 TerisRoof = 7;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Tetris Settings", meta = (ClampMin = "0.3", ClampMax = "20.0"))
+    float AutoMoveDownInterval = 1.0f;
 
     UFUNCTION(BlueprintCallable)
     void ResetTetrisPawn();
 
 private:
+
+    FTimerHandle MoveDownTimerHandle;
+    FTimerHandle DelayTimerHandle;
+    ABaseTetrisPawn* GetTetrisPawn();
+    void CheckPlaneFilling();
+    
+
+    UFUNCTION()
+    void MoveDown();
+
+    float FloorPositionZ;
+    float RoofPositionZ;
+    float BoundingMatrixLength;
+
+    UFUNCTION()
+    void OnPawnReachedFloor();
+
+    UFUNCTION()
+    void OnPawnReachedRoof();
 
     TArray<TArray<FVector>> TetrisShapes =
     {
@@ -81,13 +103,4 @@ private:
         // Point
         { FVector{0.0f, 0.0f, 0.0f} }
     };
-
-
-    ABaseTetrisPawn* GetTetrisPawn();
-
-    float FloorPositionZ;
-    float RoofPositionZ;
-
-    UFUNCTION()
-    void OnPawnReachedFloor();
 };

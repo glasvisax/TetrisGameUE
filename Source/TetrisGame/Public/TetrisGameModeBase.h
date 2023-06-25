@@ -20,6 +20,8 @@ public:
 
 protected:
 
+    virtual APlayerController* SpawnPlayerControllerCommon(ENetRole InRemoteRole, FVector const& SpawnLocation, FRotator const& SpawnRotation, TSubclassOf<APlayerController> InPlayerControllerClass) override;
+
 	virtual void BeginPlay() override;
 
 	float SpawnMatrix(int32 MatrixSize, const FVector& Position);
@@ -71,6 +73,9 @@ private:
 
     UFUNCTION()
     void OnPawnReachedRoof();
+
+    UFUNCTION()
+    void OnMoveDown();
 
     TArray<TArray<FVector>> TetrisShapes =
     {

@@ -16,6 +16,7 @@ void UBlocksShapeComponent::CreateAndAttachShapeActor(TArray<ABaseBlock*> Blocks
 {
     if (ShapeActor) return;
     ShapeActor = GetWorld()->SpawnActor<ABaseShapeActor>(ABaseShapeActor::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator);
+    ShapeActor = GetWorld()->SpawnActorDeferred<ABaseShapeActor>(ABaseShapeActor::StaticClass(), FTransform());
     FAttachmentTransformRules AttachmentRules(EAttachmentRule::KeepRelative, false);
     for (const auto block : BlocksToAttach)
     {
@@ -26,6 +27,7 @@ void UBlocksShapeComponent::CreateAndAttachShapeActor(TArray<ABaseBlock*> Blocks
             block->SetActorLocation(CurrentLocation);
         }
     }
+    ShapeActor->FinishSpawning(FTransform());
     ShapeActor->AttachToComponent(GetOwner()->GetRootComponent(), AttachmentRules);
     ShapeActor->SetActorRotation(FRotator::ZeroRotator);
     ShapeActor->AttachedBlocks = BlocksToAttach;
@@ -50,7 +52,10 @@ void UBlocksShapeComponent::ClearShapeActor()
 
 void UBlocksShapeComponent::MoveDown()
 {
-    TryToMove(-FVector::UpVector * BlockMovementDistance);
+    if (TryToMove(-FVector::UpVector * BlockMovementDistance)) 
+    {
+        OnMoveDown.Broadcast();
+    }
 }
 
 void UBlocksShapeComponent::MoveLeft()
@@ -78,15 +83,16 @@ void UBlocksShapeComponent::MakeRotation()
     TryToRotate(Rotation);
 }
 
-void UBlocksShapeComponent::TryToMove(const FVector& MoveTo)
+bool UBlocksShapeComponent::TryToMove(const FVector& MoveTo)
 {
     const auto AttachedBlocks = ShapeActor->AttachedBlocks;
     for (const auto block : AttachedBlocks)
     {
         const auto LocationToCheck = block->GetActorLocation() + MoveTo;
-        if (!IsCanMoveToLocation(LocationToCheck)) { CheckReaching(); return; }
+        if (!IsCanMoveToLocation(LocationToCheck)) { CheckReaching(); return false; }
     }
     GetOwner()->SetActorLocation(GetOwner()->GetActorLocation() + MoveTo);
+    return true;
 }
 
 void UBlocksShapeComponent::CheckReaching()
@@ -123,7 +129,7 @@ void UBlocksShapeComponent::CheckReaching()
         }
     }
 }
-void UBlocksShapeComponent::TryToRotate(const FRotator& NewRotation)
+bool UBlocksShapeComponent::TryToRotate(const FRotator& NewRotation)
 {
     ShapeActor->AddActorLocalRotation(NewRotation);
 
@@ -132,9 +138,10 @@ void UBlocksShapeComponent::TryToRotate(const FRotator& NewRotation)
         if (!IsCanMoveToLocation(block->GetActorLocation())) 
         {
             ShapeActor->AddActorLocalRotation(NewRotation.GetInverse());
-            return;
+            return false;
         }
     }
+    return true;
 }
 
 bool UBlocksShapeComponent::IsCanMoveToLocation(const FVector& NewLocation)

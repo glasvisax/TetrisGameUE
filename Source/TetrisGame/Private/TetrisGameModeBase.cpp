@@ -4,12 +4,42 @@
 #include "Components/BlocksShapeComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "TetrisPlayerState.h"
+#include "TetrisPlayerController.h"
+#include "BaseBlockIterator.h"
 
 constexpr int32 TetrisFloor = 0;
 
 ATetrisGameModeBase::ATetrisGameModeBase()
 {
     PrimaryActorTick.bCanEverTick = false;
+}
+
+APlayerController* ATetrisGameModeBase::SpawnPlayerControllerCommon(ENetRole InRemoteRole, FVector const& SpawnLocation, FRotator const& SpawnRotation, TSubclassOf<APlayerController> InPlayerControllerClass)
+{
+    if (ATetrisPlayerController::StaticClass() != InPlayerControllerClass) 
+    {
+        return Super::SpawnPlayerControllerCommon(InRemoteRole, SpawnLocation, SpawnRotation, InPlayerControllerClass);
+    }
+
+    FActorSpawnParameters SpawnInfo;
+    SpawnInfo.Instigator = GetInstigator();
+    SpawnInfo.ObjectFlags |= RF_Transient;	// We never want to save player controllers into a map
+    SpawnInfo.bDeferConstruction = true;
+    ATetrisPlayerController::SpawnInstance(GetWorld(), SpawnLocation, SpawnRotation, SpawnInfo);
+    APlayerController* NewPC = ATetrisPlayerController::GetInstance();
+
+    if (NewPC)
+    {
+        if (InRemoteRole == ROLE_SimulatedProxy)
+        {
+            // This is a local player because it has no authority/autonomous remote role
+            NewPC->SetAsLocalPlayerController();
+        }
+
+        UGameplayStatics::FinishSpawningActor(NewPC, FTransform(SpawnRotation, SpawnLocation));
+    }
+    UE_LOG(LogTemp, Error, TEXT("spawn tetris controller"));
+    return NewPC;
 }
 
 void ATetrisGameModeBase::BeginPlay()
@@ -31,10 +61,10 @@ void ATetrisGameModeBase::BeginPlay()
     if (!BlocksShapeComponent) { checkNoEntry(); return; }
     BlocksShapeComponent->OnReachedFloor.AddUObject(this, &ATetrisGameModeBase::OnPawnReachedFloor);
     BlocksShapeComponent->OnReachedRoof.AddUObject(this, &ATetrisGameModeBase::OnPawnReachedRoof);
+    BlocksShapeComponent->OnMoveDown.AddUObject(this, &ATetrisGameModeBase::OnMoveDown);
     BlocksShapeComponent->BoundingMatrixLength = BoundingMatrixLength;
     BlocksShapeComponent->FloorPositionZ = FloorPositionZ;
     BlocksShapeComponent->RoofPositionZ = RoofPositionZ;
-
 }
 
 void ATetrisGameModeBase::MoveDown()
@@ -68,11 +98,9 @@ float ATetrisGameModeBase::SpawnMatrix(int32 MatrixSize, const FVector& Position
 
             IndexX++;
         }
-
         IndexX = -MatrixSize / 2;
         IndexY++;
     }
-
     const auto RightBottomBorder = Position + FVector((-MatrixSize / 2) * BlockEdgeLength, (-MatrixSize / 2) * BlockEdgeLength, 0.0f) + FVector{-BlockEdgeLength, -BlockEdgeLength, 0.0f};
     const auto LeftTopBorder = Position + FVector((MatrixSize / 2) * BlockEdgeLength, (MatrixSize / 2) * BlockEdgeLength, 0.0f) + FVector{ BlockEdgeLength, BlockEdgeLength, 0.0f };
     return LeftTopBorder.X - 100.0f;
@@ -80,7 +108,6 @@ float ATetrisGameModeBase::SpawnMatrix(int32 MatrixSize, const FVector& Position
 
 void ATetrisGameModeBase::ResetTetrisPawn()
 {
-    UE_LOG(LogTemp, Error, TEXT("reset"));
     const auto Controller = UGameplayStatics::GetPlayerController(this, 0);
     if (!Controller) { checkNoEntry(); return; }
 
@@ -94,7 +121,7 @@ void ATetrisGameModeBase::ResetTetrisPawn()
     CheckPlaneFilling();
     TetrisPawn->SetActorLocation(FVector{ 0.0f, 0.0f, BlockEdgeLength * (TerisRoof - 1) });
     
-    const auto RandShape = TetrisShapes[(FMath::Rand() % (TetrisShapes.Num() - 1))];
+    const auto RandShape = TetrisShapes[FMath::RandRange(1, TetrisShapes.Num() - 1)];
     TArray<ABaseBlock*> SpawnedBlocks;
     for (auto i : RandShape)
     {
@@ -119,7 +146,7 @@ void ATetrisGameModeBase::OnPawnReachedFloor()
     if (!TetrisPawn) { checkNoEntry(); return; }
 
     TetrisPawn->DisableActionInput();
-    GetWorld()->GetTimerManager().SetTimer(DelayTimerHandle, this, &ATetrisGameModeBase::ResetTetrisPawn, 2.0f, false);
+    GetWorld()->GetTimerManager().SetTimer(DelayTimerHandle, this, &ATetrisGameModeBase::ResetTetrisPawn, AutoMoveDownInterval, false);
 }
 
 void ATetrisGameModeBase::CheckPlaneFilling()
@@ -163,4 +190,10 @@ ABaseTetrisPawn* ATetrisGameModeBase::GetTetrisPawn()
 void ATetrisGameModeBase::OnPawnReachedRoof()
 {
     UE_LOG(LogTemp, Error, TEXT("End Play"));
+}
+
+void ATetrisGameModeBase::OnMoveDown()
+{
+    // Обновите существующий таймер с новым интервалом
+    GetWorld()->GetTimerManager().SetTimer(MoveDownTimerHandle, this, &ATetrisGameModeBase::MoveDown, AutoMoveDownInterval, true);
 }

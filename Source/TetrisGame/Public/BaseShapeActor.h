@@ -24,5 +24,8 @@ protected:
 public:	
 
 	TArray<ABaseBlock*> AttachedBlocks;
+	TArray<FLinearColor> Colors = {
+		FLinearColor::Red, FLinearColor::Green, FLinearColor::Blue, FLinearColor::White, FLinearColor::Yellow
+	};
 
 };

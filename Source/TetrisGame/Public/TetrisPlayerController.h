@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -10,5 +8,16 @@ UCLASS()
 class TETRISGAME_API ATetrisPlayerController : public APlayerController
 {
 	GENERATED_BODY()
-	
+private:
+
+	ATetrisPlayerController();
+
+public:
+	static ATetrisPlayerController* GetInstance();
+	static void SpawnInstance(UWorld* WorldContextObj, const FVector& SpawnLocation, const FRotator& SpawnRotation, const FActorSpawnParameters& SpawnInfo);
+	static void Shutdown();
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+private:
+	static ATetrisPlayerController* Instance;
 };

@@ -29,7 +29,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement")
 	float BlockMovementDistance = 200.0f;
 
-	// сторона квадрата ограничивающего плоскость тетриса
 	float BoundingMatrixLength;
 	float FloorPositionZ = 0.0f;
 	float RoofPositionZ = BlockMovementDistance;

@@ -8,6 +8,7 @@ UCLASS()
 class TETRISGAME_API ATetrisPlayerState : public APlayerState
 {
 	GENERATED_BODY()
+
 public:
 
 	void AddPoints(int32 PointsToAdd) 

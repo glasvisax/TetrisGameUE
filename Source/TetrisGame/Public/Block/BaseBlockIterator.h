@@ -12,12 +12,13 @@ class TETRISGAME_API BaseBlockIterator
 public:
 	BaseBlockIterator(UWorld* World, std::function<bool(ABaseBlock*)> Pred);
 
-	ABaseBlock* Get() const;
+	ABaseBlock* GetBlock() const;
+	operator bool() const;
 	BaseBlockIterator& operator++();
 	BaseBlockIterator& operator--();
 	
 private:
-	bool IsValidIndex(int32 Index) const;
+	bool IsValidIndex() const;
 	TArray<ABaseBlock*> FoundBaseBlocks;
 	int32 CurrentIndex;
 };

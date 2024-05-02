@@ -1,4 +1,4 @@
-#include "Components/BlocksShapeComponent.h"
+﻿#include "BlocksShapeComponent.h"
 #include "BaseShapeActor.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -131,6 +131,8 @@ void UBlocksShapeComponent::CheckReaching()
 }
 bool UBlocksShapeComponent::TryToRotate(const FRotator& NewRotation)
 {
+    if (ShapeActor->AttachedBlocks.Num() < 2) return false;
+
     ShapeActor->AddActorLocalRotation(NewRotation);
 
     for (const auto block : ShapeActor->AttachedBlocks) 
@@ -149,14 +151,16 @@ bool UBlocksShapeComponent::IsCanMoveToLocation(const FVector& NewLocation)
     TArray<AActor*> AllBlocks;
 
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABaseBlock::StaticClass(), AllBlocks);
+    const float Epsilon = 0.2f;
 
-    for (const auto block : AllBlocks) 
+    for (const auto block : AllBlocks)
     {
         if (ShapeActor->AttachedBlocks.Contains(block)) continue;
 
-        if (NewLocation.Equals(block->GetActorLocation(), 0.2f)) return false;
+        if (NewLocation.Equals(block->GetActorLocation(), Epsilon)) return false;
     }
-    return (NewLocation.X > -BoundingMatrixLength) && (NewLocation.X < BoundingMatrixLength) && 
-           (NewLocation.Y > -BoundingMatrixLength) && (NewLocation.Y < BoundingMatrixLength);
-
+    
+    const bool isInsideBoundsX = FMath::Abs(NewLocation.X) <= (BoundingMatrixLength - Epsilon);
+    const bool isInsideBoundsY = FMath::Abs(NewLocation.Y) <= (BoundingMatrixLength - Epsilon);
+    return isInsideBoundsX && isInsideBoundsY;
 }

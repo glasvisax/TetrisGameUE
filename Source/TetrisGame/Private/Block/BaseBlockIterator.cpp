@@ -1,7 +1,7 @@
 #include "BaseBlockIterator.h"
 #include "Kismet/GameplayStatics.h"
 
-BaseBlockIterator::BaseBlockIterator(UWorld* World, std::function<bool(ABaseBlock*)> Pred = [](ABaseBlock* Block) { return true; }) : CurrentIndex(0)
+BaseBlockIterator::BaseBlockIterator(UWorld* World, std::function<bool(ABaseBlock*)> Pred = [](ABaseBlock* Block) -> bool { return true; }) : CurrentIndex(0)
 {
     if (World)
     {
@@ -21,9 +21,14 @@ BaseBlockIterator::BaseBlockIterator(UWorld* World, std::function<bool(ABaseBloc
     }
 }
 
-ABaseBlock* BaseBlockIterator::Get() const
+ABaseBlock* BaseBlockIterator::GetBlock() const
 {
-    return IsValidIndex(CurrentIndex) ? Cast<ABaseBlock>(FoundBaseBlocks[CurrentIndex]) : nullptr;
+    return IsValidIndex() ? Cast<ABaseBlock>(FoundBaseBlocks[CurrentIndex]) : nullptr;
+}
+
+BaseBlockIterator::operator bool() const
+{
+    return IsValidIndex();
 }
 
 BaseBlockIterator& BaseBlockIterator::operator++()
@@ -38,9 +43,9 @@ BaseBlockIterator& BaseBlockIterator::operator--()
     return *this;
 }
 
-bool BaseBlockIterator::IsValidIndex(int32 Index) const
+bool BaseBlockIterator::IsValidIndex() const
 {
-    return (Index >= 0) && (Index < FoundBaseBlocks.Num()) && FoundBaseBlocks[Index] != nullptr;
+    return (CurrentIndex >= 0) && (CurrentIndex < FoundBaseBlocks.Num()) && FoundBaseBlocks[CurrentIndex] != nullptr;
 }
 
 

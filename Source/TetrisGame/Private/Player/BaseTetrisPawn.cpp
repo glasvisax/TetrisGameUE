@@ -1,5 +1,5 @@
 #include "BaseTetrisPawn.h"
-#include "Components/BlocksShapeComponent.h"
+#include "BlocksShapeComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Kismet/KismetMathLibrary.h"
